@@ -1,8 +1,15 @@
 {
   "name": "discriminated-union-tools",
   "version": "0.0.1",
-  "main": "index.ts",
+  "main": "lib/index.js",
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf lib"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
 }
