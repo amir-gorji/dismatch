@@ -30,7 +30,7 @@ export function match<T extends SampleUnion>(
     throw new Error('Data is not of type discriminated union!');
   }
 
-  return <U>(matcher: Matcher<Text, U>) => Module.match<T, U>(input, matcher);
+  return <U>(matcher: Matcher<T, U>) => Module.match<T, U>(input, matcher);
 }
 
 export function matchWithDefault<T extends SampleUnion>(
@@ -40,6 +40,6 @@ export function matchWithDefault<T extends SampleUnion>(
     throw new Error('Data is not of type discriminated union!');
   }
 
-  return <U>(matcher: MatcherWithDefault<Text, U>) =>
+  return <U>(matcher: MatcherWithDefault<T, U>) =>
     Module.matchWithDefault<T, U>(input, matcher);
 }
