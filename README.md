@@ -1,4 +1,4 @@
-# discriminated-union-tools
+# dismatch
 
 Type-safe pattern matching for TypeScript discriminated unions. Zero dependencies. Full type inference. Exhaustive checking at compile time.
 
@@ -7,7 +7,7 @@ Stop writing `switch` statements. Start matching.
 ## Install
 
 ```bash
-npm install discriminated-union-tools
+npm install dismatch
 ```
 
 ## The Problem
@@ -38,7 +38,7 @@ Add a new variant to `Shape` and the compiler won't tell you about the 14 switch
 ## The Solution
 
 ```ts
-import { match } from 'discriminated-union-tools';
+import { match } from 'dismatch';
 
 const area = match(shape)({
   circle: ({ radius }) => Math.PI * radius ** 2,
@@ -117,7 +117,7 @@ const normalized = mapAll(shape)({
 Narrows a union to a specific variant. Works in `if` statements, `filter` calls, anywhere TypeScript expects a type predicate.
 
 ```ts
-import { is } from 'discriminated-union-tools';
+import { is } from 'dismatch';
 
 if (is(shape, 'circle')) {
   // TypeScript knows: shape is { type: 'circle'; radius: number }
@@ -134,7 +134,7 @@ const circles = shapes.filter((s) => is(s, 'circle'));
 Checks whether a value is a valid discriminated union (a non-null object with a string `type` property). Useful at system boundaries — API responses, form data, anything you can't trust at compile time.
 
 ```ts
-import { isUnion } from 'discriminated-union-tools';
+import { isUnion } from 'dismatch';
 
 isUnion({ type: 'circle', radius: 5 }); // true
 isUnion({ name: 'no type field' });      // false
@@ -156,7 +156,7 @@ type ApiResponse =
 Or use the `Model` helper type for cleaner definitions:
 
 ```ts
-import type { Model } from 'discriminated-union-tools';
+import type { Model } from 'dismatch';
 
 type Success = Model<'success', { data: User[] }>;
 type ApiError = Model<'error', { code: number; message: string }>;

@@ -12,7 +12,7 @@ export type { Model } from './types';
  *
  * @example
  * ```ts
- * import { Model, UnionByArray } from 'discriminated-union-tools';
+ * import { Model, UnionByArray } from 'dismatch';
  *
  * type Variants = [
  *   Model<'circle', { radius: number }>,

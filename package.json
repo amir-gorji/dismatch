@@ -1,17 +1,33 @@
 {
-  "name": "discriminated-union-tools",
-  "version": "0.0.2",
+  "name": "dismatch",
+  "description": "A lightweight discriminated unions library for TypeScript",
+  "version": "0.0.3",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "typescript",
+    "discriminated-unions",
+    "functional-programming",
+    "pattern-matching",
+    "type-safe",
+    "dismatch"
+  ],
+  "files": [
+    "lib"
+  ],
+  "author": "Amir Gorji",
+  "license": "MIT",
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf lib",
     "test": "vitest run",
     "test:watch": "vitest",
-    "ts:ci": "tsc --noEmit"
+    "ts:ci": "tsc --noEmit",
+    "prepublishOnly": "npm run clean && npm run ts:ci && npm run test && npm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/amir-gorji/dismatch.git"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
