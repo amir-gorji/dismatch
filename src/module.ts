@@ -7,18 +7,18 @@ import {
 } from './types';
 
 /**
- * Type predicate that checks whether the given value is a valid discriminated union
- * (a non-null object with a string `type` property).
+ * Checks whether a value is a valid discriminated union — a non-null object with a string discriminant property.
+ * Useful at system boundaries like API responses or form data.
  *
  * @param input - The value to check
- * @returns `true` if the value is an object with a string `type` property, `false` otherwise
+ * @param discriminant - The property to look for. Defaults to `'type'`.
+ * @returns `true` if `input` is an object with a string value at the discriminant key
  *
  * @example
  * ```ts
  * isUnion({ type: 'circle', radius: 5 }); // true
  * isUnion({ name: 'not a union' });        // false
- * isUnion(null);                            // false
- * isUnion({ type: 123 });                   // false
+ * isUnion({ status: 'ok' }, 'status');     // true
  * ```
  */
 export function isUnion<Discriminant extends string>(
@@ -34,7 +34,7 @@ export function isUnion<Discriminant extends string>(
 
 /**
  * Core implementation of exhaustive pattern matching.
- * Looks up the handler for the union's `type` discriminant and invokes it.
+ * Looks up the handler for the union's discriminant value and invokes it.
  *
  * @internal Used by the public API in `unions.ts`. Not exported directly.
  */
@@ -57,7 +57,7 @@ function match<
 
 /**
  * Core implementation of non-exhaustive pattern matching with a default fallback.
- * If no handler exists for the union's `type`, the `Default` handler is called.
+ * If no handler exists for the union's discriminant value, the `Default` handler is called.
  *
  * @internal Used by the public API in `unions.ts`. Not exported directly.
  */
@@ -119,26 +119,17 @@ function mapAll<
 }
 
 /**
- * Type guard that narrows a discriminated union to a specific variant
- * by checking whether the `type` discriminant matches the given string.
+ * Type guard that narrows a discriminated union to a specific variant.
  *
- * @typeParam T - The discriminated union type (must have a `type` property)
- * @typeParam U - The specific type literal to check against
  * @param union - The discriminated union value to check
- * @param type - The type discriminant string to match against
- * @returns `true` if `union.type === type`, narrowing the union to `Extract<T, { type: U }>`
+ * @param type - The variant value to match against
+ * @param discriminant - The property used to tell variants apart. Defaults to `'type'`.
+ * @returns `true` if the discriminant property equals `type`, narrowing to that variant
  *
  * @example
  * ```ts
- * type Shape =
- *   | { type: 'circle'; radius: number }
- *   | { type: 'rectangle'; width: number; height: number };
- *
- * declare const shape: Shape;
- *
  * if (is(shape, 'circle')) {
- *   // shape is narrowed to { type: 'circle'; radius: number }
- *   console.log(shape.radius);
+ *   console.log(shape.radius); // TypeScript knows it's a circle
  * }
  * ```
  */
