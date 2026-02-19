@@ -9,6 +9,7 @@
 
 ### Changed
 - `createPipeHandlers` and `TakeDiscriminant` are now exported from the main package entry point
+- Removed unnecessary generic from `createPipeHandler` in README
 - `Model<DiscriminantValue, Data, Discriminant>` — `Data` now defaults to `{}` and `Discriminant` defaults to `'type'`, enabling the common 1- and 2-argument forms (`Model<'idle'>`, `Model<'ok', { data: string }>`)
 - README fully restructured: table of contents, complete API reference with signatures and examples, `createPipeHandlers` pipe composition guide, type helper documentation, and real-world patterns
 
