@@ -144,7 +144,7 @@ Handlers receive the variant's **data fields** (not including the discriminant k
 
 ### `mapAll`
 
-Like `map`, but every variant must have a handler. TypeScript errors if any are missing.
+Like `map`, but every variant must have a handler — enforced at **compile time** (TypeScript errors if any are missing) and at **runtime** (throws `'Matcher incomplete!'` if an unexpected variant slips through via `any` or an untyped API boundary).
 
 ```ts
 import { mapAll } from 'dismatch';

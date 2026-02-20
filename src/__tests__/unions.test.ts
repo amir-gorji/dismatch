@@ -285,6 +285,12 @@ describe('mapAll', () => {
       'Data is not of type discriminated union!',
     );
   });
+
+  it('should throw when a handler is missing at runtime', () => {
+    expect(() =>
+      mapAll(rectangle)({ circle: (s) => s } as any),
+    ).toThrow('Matcher incomplete!');
+  });
 });
 
 const dog: Animal = { kind: 'dog', name: 'Rex' };

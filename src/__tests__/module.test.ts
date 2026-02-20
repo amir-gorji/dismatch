@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isUnion, is } from '../module';
+import { isUnion, is } from '../unions';
 
 type Shape =
   | { type: 'circle'; radius: number }

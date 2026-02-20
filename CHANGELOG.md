@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.2.1] - 2026-02-20
+
+### Changed
+- `is` and `isUnion` moved inline into `unions.ts`; `module.ts` removed
+- Internal `dispatch` and `guard` helpers extracted to eliminate code duplication across `match`, `matchWithDefault`, `map`, `mapAll`, and `createPipeHandlers`
+- `createPipeHandlers` now delegates to the public `match`/`matchWithDefault`/`map`/`mapAll` functions instead of duplicating logic
+- `mapAll` now enforces exhaustiveness at **runtime** in addition to compile time — throws `'Matcher incomplete!'` if a handler is missing, mirroring `match` behaviour
+- Minification enabled in tsup config
+- bundle size down to **901 bytes** (ESM, minified)
+
 ## [0.2.0] - 2026-02-18
 
 ### Added
