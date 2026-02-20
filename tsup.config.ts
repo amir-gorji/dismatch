@@ -9,5 +9,6 @@ export default defineConfig({
   outDir: 'lib',
   splitting: false,
   treeshake: true,
+  minify: true,
   target: 'es2020',
 });

@@ -1,12 +1,13 @@
-import { Model } from './types';
 export {
   match,
   matchWithDefault,
   map,
   mapAll,
   createPipeHandlers,
+  is,
+  isUnion,
 } from './unions';
-export { is, isUnion } from './module';
+import type { Model } from './types';
 export type { Model, TakeDiscriminant } from './types';
 
 /**
