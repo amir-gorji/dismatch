@@ -439,6 +439,38 @@ const describeArea = pipe(
 );
 ```
 
+### Async Handlers
+
+Because handlers are plain functions, returning a `Promise` requires no extra configuration. TypeScript automatically infers `Promise<T>` as the return type when handlers are async:
+
+```ts
+type JobState =
+  | { type: 'queued';  jobId: string }
+  | { type: 'running'; jobId: string; progress: number }
+  | { type: 'done';    result: string }
+  | { type: 'failed';  error: string };
+
+const output = await match(job)({
+  queued:  ({ jobId })  => enqueue(jobId),
+  running: ({ jobId })  => poll(jobId),
+  done:    ({ result }) => save(result),
+  failed:  ({ error })  => notify(error),
+});
+```
+
+`createPipeHandlers` composes equally well in async pipelines — build the handler once, then apply it to an entire array with `Promise.all`:
+
+```ts
+const processJob = jobOps.match({
+  queued:  ({ jobId })  => enqueue(jobId),
+  running: ({ jobId })  => poll(jobId),
+  done:    ({ result }) => save(result),
+  failed:  ({ error })  => notify(error),
+});
+
+const results = await Promise.all(jobs.map(processJob));
+```
+
 ---
 
 ## Clean Stack Traces
