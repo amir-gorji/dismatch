@@ -6,20 +6,7 @@ import {
   mapAll,
   createPipeHandlers,
 } from '../unions';
-
-type Shape =
-  | { type: 'circle'; radius: number }
-  | { type: 'rectangle'; width: number; height: number }
-  | { type: 'triangle'; base: number; height: number };
-
-type Animal =
-  | { kind: 'dog'; name: string }
-  | { kind: 'cat'; lives: number }
-  | { kind: 'bird'; canFly: boolean };
-
-const circle = { type: 'circle', radius: 5 } as Shape;
-const rectangle = { type: 'rectangle', width: 4, height: 6 } as Shape;
-const triangle = { type: 'triangle', base: 10, height: 3 } as Shape;
+import { type Shape, type Animal, circle, rectangle, triangle, dog, cat, bird, doubleShapeData, transformAnimalData } from './fixtures';
 
 describe('match', () => {
   const shapeMatcher = {
@@ -238,17 +225,7 @@ describe('map', () => {
 
 describe('mapAll', () => {
   it('should transform all variants with their handlers', () => {
-    const result = mapAll(circle)({
-      circle: ({ radius }) => ({ radius: radius * 2 }),
-      rectangle: ({ width, height }) => ({
-        width: width * 2,
-        height: height * 2,
-      }),
-      triangle: ({ base, height }) => ({
-        base: base * 2,
-        height: height * 2,
-      }),
-    });
+    const result = mapAll(circle)(doubleShapeData);
     expect(result).toEqual({ type: 'circle', radius: 10 });
   });
 
@@ -308,10 +285,6 @@ describe('mapAll', () => {
     expect(result).toEqual({ type: 'circle', radius: 10 });
   });
 });
-
-const dog = { kind: 'dog', name: 'Rex' } as Animal;
-const cat = { kind: 'cat', lives: 9 } as Animal;
-const bird = { kind: 'bird', canFly: true } as Animal;
 
 describe('match with custom discriminant', () => {
   const animalMatcher = {
@@ -391,14 +364,7 @@ describe('map with custom discriminant', () => {
 
 describe('mapAll with custom discriminant', () => {
   it('should transform all variants correctly with custom discriminant', () => {
-    const result = mapAll(
-      dog,
-      'kind',
-    )({
-      dog: ({ name }) => ({ name: name.toUpperCase() }),
-      cat: ({ lives }) => ({ lives: lives + 1 }),
-      bird: ({ canFly }) => ({ canFly: !canFly }),
-    });
+    const result = mapAll(dog, 'kind')(transformAnimalData);
     expect(result).toEqual({ kind: 'dog', name: 'REX' });
   });
 });
@@ -495,17 +461,7 @@ describe('createPipeHandlers', () => {
 
   describe('mapAll', () => {
     it('should transform all variants correctly', () => {
-      const fn = shapeOps.mapAll({
-        circle: ({ radius }) => ({ radius: radius * 2 }),
-        rectangle: ({ width, height }) => ({
-          width: width * 2,
-          height: height * 2,
-        }),
-        triangle: ({ base, height }) => ({
-          base: base * 2,
-          height: height * 2,
-        }),
-      });
+      const fn = shapeOps.mapAll(doubleShapeData);
       expect(fn(circle)).toEqual({ type: 'circle', radius: 10 });
       expect(fn(rectangle)).toEqual({
         type: 'rectangle',
@@ -557,11 +513,7 @@ describe('createPipeHandlers', () => {
     });
 
     it('mapAll: should transform all variants with kind discriminant', () => {
-      const fn = animalOps.mapAll({
-        dog: ({ name }) => ({ name: name.toUpperCase() }),
-        cat: ({ lives }) => ({ lives: lives + 1 }),
-        bird: ({ canFly }) => ({ canFly: !canFly }),
-      });
+      const fn = animalOps.mapAll(transformAnimalData);
       expect(fn(dog)).toEqual({ kind: 'dog', name: 'REX' });
       expect(fn(cat)).toEqual({ kind: 'cat', lives: 10 });
       expect(fn(bird)).toEqual({ kind: 'bird', canFly: false });

@@ -1,15 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { fold, createPipeHandlers, createUnion } from '../unions';
+import { fold, createPipeHandlers } from '../unions';
+import { type Shape, type Animal, ShapeFactory } from './fixtures';
 
-type Shape =
-  | { type: 'circle'; radius: number }
-  | { type: 'rectangle'; width: number; height: number }
-  | { type: 'triangle'; base: number; height: number };
-
-type Animal =
-  | { kind: 'dog'; name: string }
-  | { kind: 'cat'; lives: number }
-  | { kind: 'bird'; canFly: boolean };
+const countAllHandlers = {
+  circle: (acc: number) => acc + 1,
+  rectangle: (acc: number) => acc + 1,
+  triangle: (acc: number) => acc + 1,
+};
 
 describe('fold — standalone', () => {
   const shapes: Shape[] = [
@@ -119,29 +116,17 @@ describe('fold — createPipeHandlers', () => {
       { type: 'circle', radius: 5 },
       { type: 'rectangle', width: 4, height: 6 },
     ];
-    const count = shapeOps.fold(shapes, 0)({
-      circle: (acc) => acc + 1,
-      rectangle: (acc) => acc + 1,
-      triangle: (acc) => acc + 1,
-    });
+    const count = shapeOps.fold(shapes, 0)(countAllHandlers);
     expect(count).toBe(2);
   });
 });
 
 describe('fold — createUnion', () => {
-  const Shape = createUnion('type', {
-    circle: (radius: number) => ({ radius }),
-    rectangle: (width: number, height: number) => ({ width, height }),
-    triangle: (base: number, height: number) => ({ base, height }),
-  });
+  const Shape = ShapeFactory;
 
   it('should fold via bound factory method', () => {
     const shapes = [Shape.circle(5), Shape.rectangle(4, 6), Shape.triangle(3, 7)];
-    const count = Shape.fold(shapes, 0)({
-      circle: (acc) => acc + 1,
-      rectangle: (acc) => acc + 1,
-      triangle: (acc) => acc + 1,
-    });
+    const count = Shape.fold(shapes, 0)(countAllHandlers);
     expect(count).toBe(3);
   });
 

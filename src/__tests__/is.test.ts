@@ -1,21 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { is, createPipeHandlers, createUnion } from '../unions';
-
-type Shape =
-  | { type: 'circle'; radius: number }
-  | { type: 'rectangle'; width: number; height: number }
-  | { type: 'triangle'; base: number; height: number };
-
-type Animal =
-  | { kind: 'dog'; name: string }
-  | { kind: 'cat'; lives: number }
-  | { kind: 'bird'; canFly: boolean };
+import { is, createPipeHandlers } from '../unions';
+import { type Shape, type Animal, circle, rectangle, triangle, dog, bird, ShapeFactory } from './fixtures';
 
 describe('is — multi-variant value-first', () => {
-  const circle = { type: 'circle', radius: 5 } as Shape;
-  const rectangle = { type: 'rectangle', width: 4, height: 6 } as Shape;
-  const triangle = { type: 'triangle', base: 3, height: 7 } as Shape;
-
   it('should return true when variant is in the list', () => {
     expect(is(circle, ['circle', 'rectangle'])).toBe(true);
   });
@@ -63,9 +50,6 @@ describe('is — multi-variant value-first', () => {
 });
 
 describe('is — multi-variant with custom discriminant', () => {
-  const dog = { kind: 'dog', name: 'Rex' } as Animal;
-  const bird = { kind: 'bird', canFly: true } as Animal;
-
   it('should return true when variant matches custom discriminant', () => {
     expect(is(dog, ['dog', 'cat'], 'kind')).toBe(true);
   });
@@ -76,11 +60,7 @@ describe('is — multi-variant with custom discriminant', () => {
 });
 
 describe('is — createUnion integration', () => {
-  const Shape = createUnion('type', {
-    circle: (radius: number) => ({ radius }),
-    rectangle: (width: number, height: number) => ({ width, height }),
-    triangle: (base: number, height: number) => ({ base, height }),
-  });
+  const Shape = ShapeFactory;
 
   it('should work with is() and array of variants', () => {
     expect(is(Shape.circle(5), ['circle', 'rectangle'])).toBe(true);
@@ -91,10 +71,6 @@ describe('is — createUnion integration', () => {
 describe('pipeHandlers.is — variant-first factory', () => {
   const shapeOps = createPipeHandlers<Shape, 'type'>('type');
   const animalOps = createPipeHandlers<Animal, 'kind'>('kind');
-
-  const circle: Shape = { type: 'circle', radius: 5 };
-  const rectangle: Shape = { type: 'rectangle', width: 4, height: 6 };
-  const triangle: Shape = { type: 'triangle', base: 3, height: 7 };
 
   it('single variant — returns a predicate that narrows in .filter()', () => {
     const shapes: Shape[] = [circle, rectangle, triangle, circle];

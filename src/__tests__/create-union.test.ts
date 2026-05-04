@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createUnion, is } from '../unions';
 import type { InferUnion } from '../types';
+import { doubleShapeData, transformAnimalData } from './fixtures';
 
 const Shape = createUnion('type', {
   circle: (radius: number) => ({ radius }),
@@ -24,6 +25,14 @@ const Result = createUnion({
 });
 
 type Result = InferUnion<typeof Result>;
+
+const areaHandlers = {
+  circle: ({ radius }: { radius: number }) => Math.PI * radius ** 2,
+  rectangle: ({ width, height }: { width: number; height: number }) =>
+    width * height,
+  triangle: ({ base, height }: { base: number; height: number }) =>
+    (base * height) / 2,
+};
 
 describe('createUnion', () => {
   describe('constructors', () => {
@@ -181,11 +190,7 @@ describe('createUnion', () => {
   });
 
   describe('bound match', () => {
-    const getArea = Shape.match({
-      circle: ({ radius }) => Math.PI * radius ** 2,
-      rectangle: ({ width, height }) => width * height,
-      triangle: ({ base, height }) => (base * height) / 2,
-    });
+    const getArea = Shape.match(areaHandlers);
 
     it('should match circle', () => {
       expect(getArea(Shape.circle(5))).toBeCloseTo(Math.PI * 25);
@@ -313,17 +318,7 @@ describe('createUnion', () => {
 
   describe('bound mapAll', () => {
     it('should transform all variants', () => {
-      const describe = Shape.mapAll({
-        circle: ({ radius }) => ({ radius: radius * 2 }),
-        rectangle: ({ width, height }) => ({
-          width: width * 2,
-          height: height * 2,
-        }),
-        triangle: ({ base, height }) => ({
-          base: base * 2,
-          height: height * 2,
-        }),
-      });
+      const describe = Shape.mapAll(doubleShapeData);
       expect(describe(Shape.circle(5))).toEqual({ type: 'circle', radius: 10 });
       expect(describe(Shape.rectangle(4, 6))).toEqual({
         type: 'rectangle',
@@ -338,11 +333,7 @@ describe('createUnion', () => {
     });
 
     it('should work with custom discriminant', () => {
-      const transform = Animal.mapAll({
-        dog: ({ name }) => ({ name: name.toUpperCase() }),
-        cat: ({ lives }) => ({ lives: lives + 1 }),
-        bird: ({ canFly }) => ({ canFly: !canFly }),
-      });
+      const transform = Animal.mapAll(transformAnimalData);
       expect(transform(Animal.dog('Rex'))).toEqual({
         kind: 'dog',
         name: 'REX',
@@ -377,7 +368,10 @@ describe('createUnion', () => {
   describe('default discriminant overload', () => {
     it('should inject "type" when called with only a schema', () => {
       expect(Result.ok('done')).toEqual({ type: 'ok', data: 'done' });
-      expect(Result.error('failed')).toEqual({ type: 'error', message: 'failed' });
+      expect(Result.error('failed')).toEqual({
+        type: 'error',
+        message: 'failed',
+      });
     });
 
     it('should expose "type" as the default discriminant', () => {
@@ -446,11 +440,7 @@ describe('createUnion', () => {
     it('constructed values work with standalone match', async () => {
       const { match } = await import('../unions');
       const c = Shape.circle(5) as Shape;
-      const area = match(c)({
-        circle: ({ radius }) => Math.PI * radius ** 2,
-        rectangle: ({ width, height }) => width * height,
-        triangle: ({ base, height }) => (base * height) / 2,
-      });
+      const area = match(c)(areaHandlers);
       expect(area).toBeCloseTo(Math.PI * 25);
     });
 

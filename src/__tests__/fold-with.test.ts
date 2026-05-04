@@ -19,6 +19,11 @@ const notifications: Notification[] = [
   { type: 'push', urgent: true, message: 'Critical' },
 ];
 
+const countUrgentPushHandler = {
+  push: (acc: number, { urgent }: { urgent: boolean }) => acc + (urgent ? 1 : 0),
+  Default: (acc: number) => acc,
+};
+
 describe('foldWithDefault — standalone', () => {
   it('partial handling: specified variant runs handler, others hit Default', () => {
     const defaultHits: string[] = [];
@@ -157,10 +162,7 @@ describe('foldWithDefault — createPipeHandlers', () => {
       { type: 'email', subject: 'Hello' },
       { type: 'sms', from: '+1' },
     ];
-    const result = notifOps.foldWithDefault(items, 0)({
-      push: (acc, { urgent }) => acc + (urgent ? 1 : 0),
-      Default: (acc) => acc,
-    });
+    const result = notifOps.foldWithDefault(items, 0)(countUrgentPushHandler);
     expect(result).toBe(1);
   });
 
@@ -186,10 +188,7 @@ describe('foldWithDefault — createUnion', () => {
 
   it('works via bound factory method', () => {
     const items = [Notif.push(true, 'A'), Notif.email('B'), Notif.push(false, 'C')];
-    const result = Notif.foldWithDefault(items, 0)({
-      push: (acc, { urgent }) => acc + (urgent ? 1 : 0),
-      Default: (acc) => acc,
-    });
+    const result = Notif.foldWithDefault(items, 0)(countUrgentPushHandler);
     expect(result).toBe(1);
   });
 });

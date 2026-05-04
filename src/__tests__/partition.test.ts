@@ -1,19 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { partition, createPipeHandlers, createUnion } from '../unions';
+import { partition, createPipeHandlers } from '../unions';
+import { type Shape, type Animal, circle, rectangle, triangle, dog, cat, bird, animals, ShapeFactory } from './fixtures';
 
-type Shape =
-  | { type: 'circle'; radius: number }
-  | { type: 'rectangle'; width: number; height: number }
-  | { type: 'triangle'; base: number; height: number };
-
-type Animal =
-  | { kind: 'dog'; name: string }
-  | { kind: 'cat'; lives: number }
-  | { kind: 'bird'; canFly: boolean };
-
-const circle: Shape = { type: 'circle', radius: 5 };
-const rectangle: Shape = { type: 'rectangle', width: 4, height: 6 };
-const triangle: Shape = { type: 'triangle', base: 3, height: 7 };
 const shapes: Shape[] = [circle, rectangle, triangle, circle];
 
 describe('partition', () => {
@@ -101,11 +89,6 @@ describe('partition — non-union items are skipped', () => {
 });
 
 describe('partition — custom discriminant', () => {
-  const dog: Animal = { kind: 'dog', name: 'Rex' };
-  const cat: Animal = { kind: 'cat', lives: 9 };
-  const bird: Animal = { kind: 'bird', canFly: true };
-  const animals: Animal[] = [dog, cat, bird];
-
   it('should work with custom discriminant', () => {
     const [pets, rest] = partition(animals, ['dog', 'cat'], 'kind');
     expect(pets).toEqual([dog, cat]);
@@ -125,11 +108,7 @@ describe('partition — createPipeHandlers', () => {
 });
 
 describe('partition — createUnion', () => {
-  const Shape = createUnion('type', {
-    circle: (radius: number) => ({ radius }),
-    rectangle: (width: number, height: number) => ({ width, height }),
-    triangle: (base: number, height: number) => ({ base, height }),
-  });
+  const Shape = ShapeFactory;
 
   it('should work with createUnion bound partition', () => {
     const items = [Shape.circle(5), Shape.rectangle(4, 6), Shape.triangle(3, 7)];

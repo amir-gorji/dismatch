@@ -1,15 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { count, createPipeHandlers, createUnion } from '../unions';
-
-type Shape =
-  | { type: 'circle'; radius: number }
-  | { type: 'rectangle'; width: number; height: number }
-  | { type: 'triangle'; base: number; height: number };
-
-type Animal =
-  | { kind: 'dog'; name: string }
-  | { kind: 'cat'; lives: number }
-  | { kind: 'bird'; canFly: boolean };
+import { count, createPipeHandlers } from '../unions';
+import { type Shape, type Animal, ShapeFactory } from './fixtures';
 
 const shapes: Shape[] = [
   { type: 'circle', radius: 5 },
@@ -107,11 +98,7 @@ describe('count — non-union items are skipped', () => {
 });
 
 describe('count — createUnion', () => {
-  const Shape = createUnion('type', {
-    circle: (radius: number) => ({ radius }),
-    rectangle: (width: number, height: number) => ({ width, height }),
-    triangle: (base: number, height: number) => ({ base, height }),
-  });
+  const Shape = ShapeFactory;
 
   it('should work with createUnion bound count', () => {
     const items = [Shape.circle(5), Shape.circle(10), Shape.triangle(3, 7)];
