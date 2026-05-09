@@ -5,7 +5,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/dismatch)](https://bundlephobia.com/package/dismatch)
 
-Type-safe discriminated unions for TypeScript. Define once, get constructors, type guards, exhaustive pattern matching, async dispatch, and runtime validation — all from a single schema. Zero dependencies. ~1.4 kB gzipped.
+Type-safe discriminated unions for TypeScript. Define once, get constructors, type guards, exhaustive pattern matching, async dispatch, and runtime validation — all from a single schema. Zero dependencies. ~1.1 kB gzipped.
 
 ```ts
 import { createUnion, is, type InferUnion } from 'dismatch';
@@ -151,7 +151,7 @@ npm install dismatch
 | Capability                                          |          dismatch          |      ts-pattern       | unionize  |    @effect/match     |
 | --------------------------------------------------- | :------------------------: | :-------------------: | :-------: | :------------------: |
 | **Footprint**                                       |                            |                       |           |                      |
-| Size, minified (full main entry, not gzipped)     |        **~3.4 kB**         |        ~7.7 kB        | unclear   |    ecosystem-tied    |
+| Size, minified (full main entry, not gzipped)       |        **~2.4 kB**         |        ~7.7 kB        | unclear   |    ecosystem-tied    |
 | Zero dependencies                                   |             ✓              |           ✓           |     ✓     |          ✗           |
 | Per-function tree-shaking                           |             ✓              |        partial        |     —     |       partial        |
 | Active maintenance                                  |             ✓              |           ✓           | ✗ (2018)  |          ✓           |
