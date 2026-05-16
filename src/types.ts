@@ -332,7 +332,7 @@ export type GroupByResult<
   T extends SampleUnion<Discriminant>,
   Discriminant extends PropertyKey,
 > = {
-  [K in T[Discriminant]]: Extract<T, { [D in Discriminant]: K }>[];
+  [K in T[Discriminant]]?: Extract<T, { [D in Discriminant]: K }>[];
 };
 
 type SchemaData<D extends string> = object & { [Disc in D]?: never };

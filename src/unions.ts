@@ -605,7 +605,9 @@ export function some<
 
 /**
  * Returns `true` if every item in the collection matches the given variant(s).
- * Non-union items are silently skipped. Returns `true` for an empty collection.
+ * Non-union items are silently skipped. Returns `true` for an empty collection
+ * (vacuous truth). A collection containing only non-union items is treated as
+ * empty and also returns `true`.
  *
  * @example
  * ```ts
@@ -703,8 +705,9 @@ export function filterMap<
  *
  * @param discriminant - The property used to tell variants apart (e.g. `'type'` or `'kind'`)
  * @returns An object with handler-first utilities including `match`, `matchWithDefault`,
- *   `map`, `mapAll`, `fold`, `foldWithDefault`, `count`, `partition`, and `is` — each returning a reusable
- *   function that accepts the input value
+ *   `map`, `mapAll`, `fold`, `foldWithDefault`, `count`, `partition`, `find`, `some`,
+ *   `every`, `groupBy`, `filterMap`, and `is` — each returning a reusable function
+ *   that accepts the input value
  *
  * @example
  * ```ts

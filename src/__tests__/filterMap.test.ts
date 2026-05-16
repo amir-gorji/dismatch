@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, expectTypeOf } from 'vitest';
 import { filterMap } from '../unions';
 
 type Shape =
@@ -95,5 +95,14 @@ describe('filterMap — all handlers covered', () => {
       triangle: ({ base, height }) => (base * height) / 2,
     });
     expect(result).toEqual([5, 24, 15]);
+  });
+});
+
+describe('filterMap — type narrowing', () => {
+  it('infers return type from handler return type', () => {
+    const result = filterMap([circle, rectangle], {
+      circle: ({ radius }) => radius,
+    });
+    expectTypeOf(result).toEqualTypeOf<number[]>();
   });
 });
