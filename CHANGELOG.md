@@ -13,6 +13,7 @@
 ### Fixed
 
 - `MatcherWithDefault.Default` and `AsyncMatcherWithDefault.Default` type signatures updated — `Default` is declared as `(item: T, ...payload) => Result` using the rest-parameter form, which avoids the deferred-conditional-type problem and enables full contextual typing of `item`.
+- **`GroupByResult` keys are now optional** — absent variant groups were already absent at runtime; the type now reflects this. Callers accessing `groups.circle` must guard with `groups.circle?.` or a length/existence check.
 
 ### Documentation
 
@@ -25,7 +26,7 @@
 
 - **`find(items, variants, discriminant?)`** — returns the first item matching the given variant(s), narrowed to that type, or `undefined`. Non-union items silently skipped.
 - **`some(items, variants, discriminant?)`** — returns `true` if any item matches the given variant(s). Supports single and multi-variant. Non-union items silently skipped.
-- **`every(items, variants, discriminant?)`** — returns `true` if every item matches the given variant(s). Returns `true` for empty collections (vacuous truth). Non-union items silently skipped.
+- **`every(items, variants, discriminant?)`** — returns `true` if every item matches the given variant(s). Non-union items are silently skipped; a collection of only non-union items is treated as empty and also returns `true` (vacuous truth, consistent with `Array.prototype.every`).
 - **`groupBy(items, discriminant?)`** — groups a collection by variant in one pass. Each group is narrowed to the specific variant type (`{ circle: Circle[]; rectangle: Rectangle[] }`). Non-union items silently skipped.
 - **`filterMap(items, handlers, discriminant?)`** — filters and transforms in one pass. Handler returns a value to keep or `undefined` to skip. `null` is a valid kept value. Unhandled variants silently skipped. Non-union items silently skipped.
 - All five ops available as standalone functions and as pipe-friendly bindings on `createPipeHandlers` and `createUnion`.

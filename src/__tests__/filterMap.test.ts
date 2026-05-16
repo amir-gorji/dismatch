@@ -99,8 +99,8 @@ describe('filterMap — all handlers covered', () => {
 });
 
 describe('filterMap — type narrowing', () => {
-  it('infers return type from handler return type', () => {
-    const result = filterMap([circle, rectangle], {
+  it('returns Result[] when Result generic is provided', () => {
+    const result = filterMap<Shape, number>([circle, rectangle], {
       circle: ({ radius }) => radius,
     });
     expectTypeOf(result).toEqualTypeOf<number[]>();

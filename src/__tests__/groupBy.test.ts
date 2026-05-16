@@ -73,7 +73,7 @@ describe('groupBy — custom discriminant', () => {
 describe('groupBy — type narrowing', () => {
   it('each group is narrowed to the specific variant type', () => {
     const result = groupBy([circle, rectangle]);
-    expectTypeOf(result.circle).toEqualTypeOf<{ type: 'circle'; radius: number }[]>();
-    expectTypeOf(result.rectangle).toEqualTypeOf<{ type: 'rectangle'; width: number; height: number }[]>();
+    expectTypeOf(result.circle).toEqualTypeOf<{ type: 'circle'; radius: number }[] | undefined>();
+    expectTypeOf(result.rectangle).toEqualTypeOf<{ type: 'rectangle'; width: number; height: number }[] | undefined>();
   });
 });
