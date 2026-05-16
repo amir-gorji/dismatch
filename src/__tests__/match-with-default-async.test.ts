@@ -38,7 +38,7 @@ describe('matchWithDefaultAsync', () => {
   it('passes payload to Default', async () => {
     const out = await matchWithDefaultAsync(pending, 'type', 'x')({
       ok: async ({ value }, p) => `ok:${value}:${p}`,
-      Default: (p) => `default:${p}`,
+      Default: (_item, p) => `default:${p}`,
     });
     expect(out).toBe('default:x');
   });

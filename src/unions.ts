@@ -1,6 +1,8 @@
 import {
+  FilterMapHandlers,
   Folder,
   FolderWithDefault,
+  GroupByResult,
   InferUnionFromSchema,
   Mapper,
   MapperAll,
@@ -106,14 +108,14 @@ export function dispatch<
     ((input: any, payload: Payload) => Result) | undefined
   >,
   discriminant: Discriminant,
-  fallback: ((payload: Payload) => Result) | undefined,
+  fallback: ((item: T, payload: Payload) => Result) | undefined,
   payload: Payload | undefined,
   caller: Function,
 ): Result {
   const key = union[discriminant] as string;
   const fn = Object.hasOwn(handlers, key) ? handlers[key] : undefined;
   if (fn) return fn(union, payload!);
-  if (fallback) return fallback(payload!);
+  if (fallback) return fallback(union, payload!);
   return rethrow(new UnknownVariantError(key, Object.keys(handlers)), caller);
 }
 
@@ -356,11 +358,7 @@ export function match<
 
 /**
  * Pattern matching with a fallback. Handle specific variants explicitly; `Default` catches the rest.
- *
- * **Design limitation:** The `Default` handler does not receive the triggering variant —
- * it cannot determine which variant fell through. When no `Payload` is used, `Default`
- * receives no arguments at all. To inspect the unmatched variant inside `Default`, either
- * switch to exhaustive {@link match}, or pass the original value as `payload`.
+ * `Default` receives the unhandled union item — typed as the sub-union of variants that have no handler.
  *
  * @param input - The discriminated union value to match against
  * @param discriminant - The property used to tell variants apart. Defaults to `'type'`.
@@ -371,7 +369,7 @@ export function match<
  * ```ts
  * const label = matchWithDefault(shape)({
  *   circle: ({ radius }) => `Circle r=${radius}`,
- *   Default: () => 'Some other shape', // ← no access to which variant triggered Default
+ *   Default: (item) => `Other shape: ${item.type}`, // item is typed as the unhandled sub-union
  * });
  * ```
  */
@@ -383,9 +381,17 @@ export function matchWithDefault<
   input: T,
   discriminant: Discriminant = DEFAULT_DISCRIMINANT as Discriminant,
   payload?: Payload,
-): <U>(matcher: MatcherWithDefault<T, U, Discriminant, Payload>) => U {
+): <U>(
+  matcher: Partial<Matcher<T, U, Discriminant, Payload>> & {
+    Default: (item: T, ...payload: [Payload] extends [never] ? [] : [payload: Payload]) => U;
+  },
+) => U {
   ensureUnion(input, discriminant, matchWithDefault);
-  return <U>(matcher: MatcherWithDefault<T, U, Discriminant, Payload>) =>
+  return <U>(
+    matcher: Partial<Matcher<T, U, Discriminant, Payload>> & {
+      Default: (item: T, ...payload: [Payload] extends [never] ? [] : [payload: Payload]) => U;
+    },
+  ) =>
     dispatch<T, U, Discriminant, Payload>(
       input,
       matcher as unknown as Record<string, (input: any, payload: Payload) => U>,
@@ -542,6 +548,155 @@ export function partition<
 }
 
 /**
+ * Returns the first item in a collection matching the given variant(s), narrowed to that type,
+ * or `undefined` if no match is found. Non-union items are silently skipped.
+ *
+ * @example
+ * ```ts
+ * find(shapes, 'circle');              // Circle | undefined
+ * find(shapes, ['circle', 'rect']);    // Circle | Rect | undefined
+ * find(events, 'click', 'kind');       // custom discriminant
+ * ```
+ */
+export function find<
+  T extends SampleUnion<Discriminant>,
+  U extends T[Discriminant],
+  Discriminant extends PropertyKey = 'type',
+>(
+  items: readonly T[],
+  variants: U | readonly U[],
+  discriminant: Discriminant = DEFAULT_DISCRIMINANT as Discriminant,
+): Extract<T, { [K in Discriminant]: U }> | undefined {
+  const keySet = new Set(([] as string[]).concat(variants as any));
+  for (const item of items) {
+    if (!isUnion(item, discriminant)) continue;
+    if (keySet.has(item[discriminant] as string))
+      return item as Extract<T, { [K in Discriminant]: U }>;
+  }
+  return undefined;
+}
+
+/**
+ * Returns `true` if any item in the collection matches the given variant(s).
+ * Non-union items are silently skipped.
+ *
+ * @example
+ * ```ts
+ * some(shapes, 'circle');                // boolean
+ * some(shapes, ['circle', 'rect']);      // boolean
+ * some(events, 'click', 'kind');         // custom discriminant
+ * ```
+ */
+export function some<
+  T extends SampleUnion<Discriminant>,
+  Discriminant extends PropertyKey = 'type',
+>(
+  items: readonly T[],
+  variants: T[Discriminant] | readonly T[Discriminant][],
+  discriminant: Discriminant = DEFAULT_DISCRIMINANT as Discriminant,
+): boolean {
+  const keySet = new Set(([] as string[]).concat(variants as any));
+  for (const item of items) {
+    if (!isUnion(item, discriminant)) continue;
+    if (keySet.has(item[discriminant] as string)) return true;
+  }
+  return false;
+}
+
+/**
+ * Returns `true` if every item in the collection matches the given variant(s).
+ * Non-union items are silently skipped. Returns `true` for an empty collection.
+ *
+ * @example
+ * ```ts
+ * every(shapes, 'circle');              // true only if all shapes are circles
+ * every(shapes, ['circle', 'rect']);    // true if no triangles
+ * every(events, 'click', 'kind');       // custom discriminant
+ * ```
+ */
+export function every<
+  T extends SampleUnion<Discriminant>,
+  Discriminant extends PropertyKey = 'type',
+>(
+  items: readonly T[],
+  variants: T[Discriminant] | readonly T[Discriminant][],
+  discriminant: Discriminant = DEFAULT_DISCRIMINANT as Discriminant,
+): boolean {
+  const keySet = new Set(([] as string[]).concat(variants as any));
+  for (const item of items) {
+    if (!isUnion(item, discriminant)) continue;
+    if (!keySet.has(item[discriminant] as string)) return false;
+  }
+  return true;
+}
+
+/**
+ * Groups a collection by variant, returning an object keyed by variant name.
+ * Each group is narrowed to the specific variant type. Non-union items are silently skipped.
+ * Keys for variants absent from the input will not be present at runtime.
+ *
+ * @example
+ * ```ts
+ * const groups = groupBy(shapes);
+ * groups.circle;    // Circle[]
+ * groups.rect;      // Rectangle[]
+ * ```
+ */
+export function groupBy<
+  T extends SampleUnion<Discriminant>,
+  Discriminant extends PropertyKey = 'type',
+>(
+  items: readonly T[],
+  discriminant: Discriminant = DEFAULT_DISCRIMINANT as Discriminant,
+): GroupByResult<T, Discriminant> {
+  const result: Record<string, T[]> = {};
+  for (const item of items) {
+    if (!isUnion(item, discriminant)) continue;
+    const key = item[discriminant] as string;
+    if (!Object.hasOwn(result, key)) result[key] = [];
+    result[key].push(item);
+  }
+  return result as GroupByResult<T, Discriminant>;
+}
+
+/**
+ * Filters and transforms a collection in a single pass. Each handler receives the
+ * variant's data and returns a transformed value to keep, or `undefined` to skip.
+ * Variants with no handler are silently skipped. `null` is a valid kept value.
+ * Non-union items are silently skipped.
+ *
+ * @example
+ * ```ts
+ * const areas = filterMap(shapes, {
+ *   circle: ({ radius }) => Math.PI * radius ** 2,
+ *   // rectangle omitted — skipped
+ * });
+ * ```
+ */
+export function filterMap<
+  T extends SampleUnion<Discriminant>,
+  Result,
+  Discriminant extends PropertyKey = 'type',
+>(
+  items: readonly T[],
+  handlers: FilterMapHandlers<T, Result, Discriminant>,
+  discriminant: Discriminant = DEFAULT_DISCRIMINANT as Discriminant,
+): Result[] {
+  const result: Result[] = [];
+  for (const item of items) {
+    if (!isUnion(item, discriminant)) continue;
+    const key = item[discriminant] as string;
+    const handler = Object.hasOwn(handlers, key)
+      ? (handlers as any)[key]
+      : undefined;
+    if (!handler) continue;
+    const value = handler(item);
+    if (value !== undefined) result.push(value);
+  }
+  return result;
+}
+
+/**
  * Creates a pipe-friendly handler factory bound to a specific discriminant key.
  * Returns an object whose methods follow the reversed-curry shape `(handlers) => (input) => result`,
  * making them composable inside FP `pipe` utilities without wrapper lambdas.
@@ -640,6 +795,30 @@ export function createPipeHandlers<
       <U extends T[Discriminant]>(variants: U | readonly U[]) =>
       (input: T): input is Extract<T, { [K in Discriminant]: U }> =>
         is(input, variants as string | readonly string[], discriminant),
+
+    find:
+      <U extends T[Discriminant]>(variants: U | readonly U[]) =>
+      (items: readonly T[]): Extract<T, { [K in Discriminant]: U }> | undefined =>
+        find(items, variants, discriminant),
+
+    some:
+      (variants: T[Discriminant] | readonly T[Discriminant][]) =>
+      (items: readonly T[]): boolean =>
+        some(items, variants, discriminant),
+
+    every:
+      (variants: T[Discriminant] | readonly T[Discriminant][]) =>
+      (items: readonly T[]): boolean =>
+        every(items, variants, discriminant),
+
+    groupBy:
+      (items: readonly T[]): GroupByResult<T, Discriminant> =>
+        groupBy(items, discriminant),
+
+    filterMap:
+      <Result>(handlers: FilterMapHandlers<T, Result, Discriminant>) =>
+      (items: readonly T[]): Result[] =>
+        filterMap(items, handlers, discriminant),
   };
 }
 
@@ -679,6 +858,7 @@ export function createPipeHandlers<
 const RESERVED_UNION_KEYS = new Set<string>([
   'is', 'isKnown', 'match', 'matchWithDefault', 'map', 'mapAll',
   'fold', 'foldWithDefault', 'count', 'partition',
+  'find', 'some', 'every', 'groupBy', 'filterMap',
   'variants', 'discriminant', '_union',
 ]);
 

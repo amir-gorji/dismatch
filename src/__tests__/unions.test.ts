@@ -173,6 +173,32 @@ describe('matchWithDefault', () => {
       'Not a union',
     );
   });
+
+  it('Default receives the unhandled item at runtime', () => {
+    const received: Shape[] = [];
+    matchWithDefault(triangle)({
+      circle: ({ radius }) => radius,
+      Default: (item) => { received.push(item); return 0; },
+    });
+    expect(received).toHaveLength(1);
+    expect(received[0]).toBe(triangle);
+  });
+
+  it('Default receives the full item when no variants are handled', () => {
+    const received: Shape[] = [];
+    matchWithDefault(circle)({
+      Default: (item) => { received.push(item); return 'x'; },
+    });
+    expect(received[0]).toBe(circle);
+  });
+
+  it('Default: () => result (no declared params) still works', () => {
+    const result = matchWithDefault(triangle)({
+      circle: ({ radius }) => `circle:${radius}`,
+      Default: () => 'fallback',
+    });
+    expect(result).toBe('fallback');
+  });
 });
 
 describe('map', () => {

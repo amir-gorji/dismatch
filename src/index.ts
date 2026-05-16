@@ -7,6 +7,11 @@ export {
   foldWithDefault,
   count,
   partition,
+  find,
+  some,
+  every,
+  groupBy,
+  filterMap,
   createPipeHandlers,
   createUnion,
   is,
@@ -22,4 +27,6 @@ export type {
   MapperAll,
   Folder,
   FolderWithDefault,
+  FilterMapHandlers,
+  GroupByResult,
 } from './types';

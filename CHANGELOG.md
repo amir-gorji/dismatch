@@ -2,9 +2,38 @@
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-05-16
+
 ### Changed
 
+- **`matchWithDefault` and `matchWithDefaultAsync` — `Default` now receives the triggering item** — `Default` is called with the full union value as its first argument (`item: T`), giving callers access to both the discriminant and any data fields. Previously `Default` received no arguments. `Default: () => fallback` (no declared parameters) continues to compile and work without change — TypeScript allows ignoring declared parameters.
+- **Payload callers: `Default` signature shifted** — when a `Payload` generic is in use, `Default` now receives `(item, payload)` instead of `(payload)`. This is a breaking change for the small subset of callers that pass a payload and handle `Default`.
 - **Build target bumped to `es2022`** — `tsup.config.ts` now targets ES2022 (was ES2020), enabling native output for features like class static blocks and `at()`.
+
+### Fixed
+
+- `MatcherWithDefault.Default` and `AsyncMatcherWithDefault.Default` type signatures updated — `Default` is declared as `(item: T, ...payload) => Result` using the rest-parameter form, which avoids the deferred-conditional-type problem and enables full contextual typing of `item`.
+
+### Documentation
+
+- **Featured plain-object emission as a top-of-README strength** — `createUnion` produces plain `{ type, ... }` objects with no runtime wrappers, enabling wire serialization, clean debugging, and direct interop with `switch` / `ts-pattern`.
+- **Quick Start now documents two re-export idioms** — "namespace style" (factory + `InferUnion`) and "exit-friendly style" (file-private factory; type alias derived from `ReturnType` of constructors so it has no dependency on the factory).
+- **New `Removing dismatch` section** — mechanical rewrite recipe (constructor → object literal, `match(...)` → `switch`, `is(...)` → `===`) plus an incremental-adoption block showing the same value matched with `switch`, `ts-pattern`, and dismatch side-by-side.
+- **Comparison table extended** — added `Adoption & interop` group with rows for plain-object output and source-level exit cost.
+
+### Added
+
+- **`find(items, variants, discriminant?)`** — returns the first item matching the given variant(s), narrowed to that type, or `undefined`. Non-union items silently skipped.
+- **`some(items, variants, discriminant?)`** — returns `true` if any item matches the given variant(s). Supports single and multi-variant. Non-union items silently skipped.
+- **`every(items, variants, discriminant?)`** — returns `true` if every item matches the given variant(s). Returns `true` for empty collections (vacuous truth). Non-union items silently skipped.
+- **`groupBy(items, discriminant?)`** — groups a collection by variant in one pass. Each group is narrowed to the specific variant type (`{ circle: Circle[]; rectangle: Rectangle[] }`). Non-union items silently skipped.
+- **`filterMap(items, handlers, discriminant?)`** — filters and transforms in one pass. Handler returns a value to keep or `undefined` to skip. `null` is a valid kept value. Unhandled variants silently skipped. Non-union items silently skipped.
+- All five ops available as standalone functions and as pipe-friendly bindings on `createPipeHandlers` and `createUnion`.
+- New exported types: `FilterMapHandlers<T, Result, Discriminant>`, `GroupByResult<T, Discriminant>`.
+
+### Bundle size
+
+- Canonical metric (`esbuild --bundle --minify`, non-gzipped): **3,250 B (3.17 KB)** — +805 B from 2.5.0, adding five new collection operations (~161 B/op). Stays under the 4.0 KB cap.
 
 ## [2.5.0] - 2026-04-26
 

@@ -22,8 +22,10 @@ describe('createPipeHandlers with payload', () => {
     it('accepts payload as second arg to the returned function', () => {
       const fn = shapeOps.match<string, Context>({
         circle: ({ radius }, p) => `${p.label}:${radius * p.scale}`,
-        rectangle: ({ width, height }, p) => `${p.label}:${width * height * p.scale}`,
-        triangle: ({ base, height }, p) => `${p.label}:${(base * height) / 2 * p.scale}`,
+        rectangle: ({ width, height }, p) =>
+          `${p.label}:${width * height * p.scale}`,
+        triangle: ({ base, height }, p) =>
+          `${p.label}:${((base * height) / 2) * p.scale}`,
       });
       expect(fn(circle, ctx)).toBe('test:10');
       expect(fn(rectangle, ctx)).toBe('test:48');
@@ -31,19 +33,16 @@ describe('createPipeHandlers with payload', () => {
   });
 
   describe('matchWithDefault', () => {
+    const fn = shapeOps.matchWithDefault<string, Context>({
+      circle: ({ radius }, p) => `${p.label}:${radius * p.scale}`,
+      Default: (_item, p) => `${p.label}:other`,
+    });
+
     it('passes payload to matched handler', () => {
-      const fn = shapeOps.matchWithDefault<string, Context>({
-        circle: ({ radius }, p) => `${p.label}:${radius * p.scale}`,
-        Default: (p) => `${p.label}:other`,
-      });
       expect(fn(circle, ctx)).toBe('test:10');
     });
 
     it('passes payload to Default when no variant matched', () => {
-      const fn = shapeOps.matchWithDefault<string, Context>({
-        circle: ({ radius }, p) => `${p.label}:${radius * p.scale}`,
-        Default: (p) => `${p.label}:other`,
-      });
       expect(fn(triangle, ctx)).toBe('test:other');
     });
   });
@@ -71,7 +70,11 @@ describe('createPipeHandlers with payload', () => {
         }),
       });
       expect(fn(circle, ctx)).toEqual({ type: 'circle', radius: 10 });
-      expect(fn(rectangle, ctx)).toEqual({ type: 'rectangle', width: 8, height: 12 });
+      expect(fn(rectangle, ctx)).toEqual({
+        type: 'rectangle',
+        width: 8,
+        height: 12,
+      });
     });
   });
 });
@@ -88,8 +91,10 @@ describe('createUnion with payload', () => {
   it('match passes payload to handler', () => {
     const fn = Shape.match<string, Context>({
       circle: ({ radius }, p) => `${p.label}:${radius * p.scale}`,
-      rectangle: ({ width, height }, p) => `${p.label}:${width * height * p.scale}`,
-      triangle: ({ base, height }, p) => `${p.label}:${(base * height) / 2 * p.scale}`,
+      rectangle: ({ width, height }, p) =>
+        `${p.label}:${width * height * p.scale}`,
+      triangle: ({ base, height }, p) =>
+        `${p.label}:${((base * height) / 2) * p.scale}`,
     });
     expect(fn(Shape.circle(5), ctx)).toBe('test:10');
   });
@@ -97,7 +102,7 @@ describe('createUnion with payload', () => {
   it('matchWithDefault passes payload to Default', () => {
     const fn = Shape.matchWithDefault<string, Context>({
       circle: ({ radius }, p) => `${p.label}:${radius}`,
-      Default: (p) => `${p.label}:unknown`,
+      Default: (_item, p) => `${p.label}:unknown`,
     });
     expect(fn(Shape.triangle(10, 3), ctx)).toBe('test:unknown');
   });

@@ -1,4 +1,14 @@
-import { createUnion, match, type InferUnion } from 'dismatch';
+import {
+  createUnion,
+  match,
+  matchWithDefault,
+  find,
+  some,
+  every,
+  groupBy,
+  filterMap,
+  type InferUnion,
+} from 'dismatch';
 
 const Result = createUnion('type', {
   ok: (data: string) => ({ data }),
@@ -73,3 +83,44 @@ Result.map({
   type: 'ok',
   message: '',
 }) satisfies ReturnType<NonNullable<Parameters<typeof Result.map>[0]['error']>>;
+
+declare const anyResult: Result;
+
+// Default receives the full union item — narrow with item.type inside Default
+matchWithDefault(anyResult)({
+  ok: ({ data }) => data.length,
+  Default: (item) => {
+    item.type; // discriminant always present — compiles
+    // @ts-expect-error 'data' does not exist on all variants of Result
+    item.data;
+    return 0;
+  },
+});
+
+// Default: () => result (no declared params) still compiles — non-breaking
+matchWithDefault(anyResult)({
+  ok: ({ data }) => data.length,
+  Default: () => 0,
+});
+
+declare const results: Result[];
+
+// find — narrows to the specific variant or undefined
+const found: { type: 'ok'; data: string } | undefined = find(results, 'ok');
+
+// some / every — boolean predicates
+const hasOk: boolean = some(results, 'ok');
+const allOk: boolean = every(results, 'ok');
+const multiSome: boolean = some(results, ['ok', 'loading'] as const);
+
+// groupBy — each group is narrowed to the variant type
+const groups = groupBy(results);
+const okGroup: { type: 'ok'; data: string }[] = groups.ok;
+
+// filterMap — transforms and filters in one pass
+const lengths: number[] = filterMap(results, {
+  ok: ({ data }) => data.length,
+  // error and loading omitted — silently skipped
+});
+
+found; hasOk; allOk; multiSome; okGroup; lengths;
