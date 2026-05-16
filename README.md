@@ -661,8 +661,8 @@ Groups a collection by variant in one pass. Each group is narrowed to the specif
 import { groupBy } from 'dismatch';
 
 const groups = groupBy(shapes);
-groups.circle;     // Circle[]
-groups.rectangle;  // Rectangle[]
+groups.circle;     // Circle[] | undefined
+groups.rectangle;  // Rectangle[] | undefined
 
 // Custom discriminant
 groupBy(events, 'kind');
@@ -823,7 +823,7 @@ const summary = await foldWithDefaultAsync(
 
 ## Pipe Composition
 
-`createPipeHandlers` returns the same set of sync operations in **handlers-first** curried order — you define handlers once, get back a reusable function bound to the union type and discriminant. No generics needed at call sites. Exposes `match`, `matchWithDefault`, `map`, `mapAll`, `fold`, `foldWithDefault`, `count`, `partition`, and `is`. (Async helpers are standalone-only — see [Async Functions](#async-functions).)
+`createPipeHandlers` returns the same set of sync operations in **handlers-first** curried order — you define handlers once, get back a reusable function bound to the union type and discriminant. No generics needed at call sites. Exposes `match`, `matchWithDefault`, `map`, `mapAll`, `fold`, `foldWithDefault`, `count`, `partition`, `find`, `some`, `every`, `groupBy`, `filterMap`, and `is`. (Async helpers are standalone-only — see [Async Functions](#async-functions).)
 
 ```ts
 import { createPipeHandlers } from 'dismatch';

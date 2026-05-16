@@ -489,7 +489,7 @@ export type UnionFactory<D extends string, Schema extends UnionSchema<D>> = {
   ) => (items: ReadonlyArray<InferUnionFromSchema<D, Schema>>) => boolean;
   readonly groupBy: (
     items: ReadonlyArray<InferUnionFromSchema<D, Schema>>,
-  ) => { [K in keyof Schema & string]: Extract<InferUnionFromSchema<D, Schema>, { [Disc in D]: K }>[] };
+  ) => GroupByResult<InferUnionFromSchema<D, Schema>, D>;
   readonly filterMap: <Result>(
     handlers: FilterMapHandlers<InferUnionFromSchema<D, Schema>, Result, D>,
   ) => (items: ReadonlyArray<InferUnionFromSchema<D, Schema>>) => Result[];

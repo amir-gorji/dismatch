@@ -115,7 +115,10 @@ const multiSome: boolean = some(results, ['ok', 'loading'] as const);
 
 // groupBy — each group is narrowed to the variant type
 const groups = groupBy(results);
-const okGroup: { type: 'ok'; data: string }[] = groups.ok;
+const okGroup: { type: 'ok'; data: string }[] | undefined = groups.ok;
+const okGroupOrEmpty: { type: 'ok'; data: string }[] = groups.ok ?? [];
+const boundGroups = Result.groupBy(results);
+const boundOkGroup: { type: 'ok'; data: string }[] | undefined = boundGroups.ok;
 
 // filterMap — transforms and filters in one pass
 const lengths: number[] = filterMap(results, {
@@ -123,4 +126,4 @@ const lengths: number[] = filterMap(results, {
   // error and loading omitted — silently skipped
 });
 
-found; hasOk; allOk; multiSome; okGroup; lengths;
+found; hasOk; allOk; multiSome; okGroup; okGroupOrEmpty; boundOkGroup; lengths;

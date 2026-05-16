@@ -640,8 +640,8 @@ export function every<
  * @example
  * ```ts
  * const groups = groupBy(shapes);
- * groups.circle;    // Circle[]
- * groups.rect;      // Rectangle[]
+ * groups.circle;    // Circle[] | undefined
+ * groups.rect;      // Rectangle[] | undefined
  * ```
  */
 export function groupBy<
