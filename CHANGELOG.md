@@ -2,9 +2,44 @@
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-05-16
+
+### Breaking
+
+- **`matchWithDefault` and `matchWithDefaultAsync` — `Default` now receives the triggering item** — `Default` is called with the full union value as its first argument (`item: T`), giving callers access to both the discriminant and any data fields. Previously `Default` received no arguments. `Default: () => fallback` (no declared parameters) continues to compile and work without change — TypeScript allows ignoring declared parameters.
+- **Payload callers: `Default` signature shifted** — when a `Payload` generic is in use, `Default` now receives `(item, payload)` instead of `(payload)`. This affects callers that pass a payload and handle `Default`.
+- **New bound collection operation names are reserved in `createUnion` schemas** — `find`, `some`, `every`, `groupBy`, and `filterMap` now join the reserved factory keys. Schemas using those names as variants must rename the variant or use standalone collection helpers with plain union values.
+- **`GroupByResult` keys are now optional** — absent variant groups were already absent at runtime; the type now reflects this. Callers accessing `groups.circle` must guard with `groups.circle?.`, `groups.circle ?? []`, or an existence check.
+
 ### Changed
 
 - **Build target bumped to `es2022`** — `tsup.config.ts` now targets ES2022 (was ES2020), enabling native output for features like class static blocks and `at()`.
+
+### Fixed
+
+- `MatcherWithDefault.Default` and `AsyncMatcherWithDefault.Default` type signatures updated — `Default` is declared as `(item: T, ...payload) => Result` using the rest-parameter form, which avoids the deferred-conditional-type problem and enables full contextual typing of `item`.
+- Bound `createUnion(...).groupBy(...)` now returns the same optional-keyed `GroupByResult` type as standalone `groupBy(...)` and `createPipeHandlers(...).groupBy(...)`.
+
+### Documentation
+
+- **Featured plain-object emission as a top-of-README strength** — `createUnion` produces plain `{ type, ... }` objects with no runtime wrappers, enabling wire serialization, clean debugging, and direct interop with `switch` / `ts-pattern`.
+- **Quick Start now documents two re-export idioms** — "namespace style" (factory + `InferUnion`) and "exit-friendly style" (file-private factory; type alias derived from `ReturnType` of constructors so it has no dependency on the factory).
+- **New `Removing dismatch` section** — mechanical rewrite recipe (constructor → object literal, `match(...)` → `switch`, `is(...)` → `===`) plus an incremental-adoption block showing the same value matched with `switch`, `ts-pattern`, and dismatch side-by-side.
+- **Comparison table extended** — added `Adoption & interop` group with rows for plain-object output and source-level exit cost.
+
+### Added
+
+- **`find(items, variants, discriminant?)`** — returns the first item matching the given variant(s), narrowed to that type, or `undefined`. Non-union items silently skipped.
+- **`some(items, variants, discriminant?)`** — returns `true` if any item matches the given variant(s). Supports single and multi-variant. Non-union items silently skipped.
+- **`every(items, variants, discriminant?)`** — returns `true` if every item matches the given variant(s). Non-union items are silently skipped; a collection of only non-union items is treated as empty and also returns `true` (vacuous truth, consistent with `Array.prototype.every`).
+- **`groupBy(items, discriminant?)`** — groups a collection by variant in one pass. Each present group is narrowed to the specific variant type (`{ circle?: Circle[]; rectangle?: Rectangle[] }`). Non-union items silently skipped.
+- **`filterMap(items, handlers, discriminant?)`** — filters and transforms in one pass. Handler returns a value to keep or `undefined` to skip. `null` is a valid kept value. Unhandled variants silently skipped. Non-union items silently skipped.
+- All five ops available as standalone functions and as pipe-friendly bindings on `createPipeHandlers` and `createUnion`.
+- New exported types: `FilterMapHandlers<T, Result, Discriminant>`, `GroupByResult<T, Discriminant>`.
+
+### Bundle size
+
+- Canonical metric (`esbuild --bundle --minify`, non-gzipped): **3,250 B (3.17 KB)** — +805 B from 2.5.0, adding five new collection operations (~161 B/op). Stays under the 4.0 KB cap.
 
 ## [2.5.0] - 2026-04-26
 
@@ -19,7 +54,7 @@
 
 - `MatcherWithDefault.Default`, `Mapper`, and `MapperAll` payload signatures no longer force a synthetic `payload` parameter when `Payload` is omitted — their type-level call shapes now match the runtime curried APIs.
 - README fully restructured around reusable handlers, async matching, runtime errors, and bundle-size positioning; added dedicated sections for the async surface and `UnknownVariantError`.
-- **Package verification updated for the expanded public surface** — `verify-package.mjs` now expects the async exports and `UnknownVariantError` from the main entry while continuing to assert that `dismatch/remote-data` exports *exactly* `['RemoteData']`.
+- **Package verification updated for the expanded public surface** — `verify-package.mjs` now expects the async exports and `UnknownVariantError` from the main entry while continuing to assert that `dismatch/remote-data` exports _exactly_ `['RemoteData']`.
 
 ### Fixed
 

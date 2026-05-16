@@ -13,14 +13,33 @@
  *   - createPipeHandlers for reusable, array-friendly operations
  */
 
-import { match, matchWithDefault, map, mapAll, is, createPipeHandlers } from 'dismatch';
+import {
+  match,
+  matchWithDefault,
+  map,
+  mapAll,
+  is,
+  createPipeHandlers,
+} from 'dismatch';
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
 type Notification =
-  | { type: 'email'; from: string; subject: string; read: boolean; starred: boolean }
-  | { type: 'sms';   from: string; body: string;    read: boolean }
-  | { type: 'push';  app: string;  title: string;   read: boolean; urgent: boolean };
+  | {
+      type: 'email';
+      from: string;
+      subject: string;
+      read: boolean;
+      starred: boolean;
+    }
+  | { type: 'sms'; from: string; body: string; read: boolean }
+  | {
+      type: 'push';
+      app: string;
+      title: string;
+      read: boolean;
+      urgent: boolean;
+    };
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -29,29 +48,29 @@ const notifOps = createPipeHandlers<Notification, 'type'>('type');
 /** Single-line preview text shown in the notification list. */
 const getPreview = notifOps.match({
   email: ({ from, subject }) => `📧 ${from}: ${subject}`,
-  sms:   ({ from, body })    => `💬 ${from}: ${body.slice(0, 60)}`,
-  push:  ({ app, title })    => `🔔 ${app}: ${title}`,
+  sms: ({ from, body }) => `💬 ${from}: ${body.slice(0, 60)}`,
+  push: ({ app, title }) => `🔔 ${app}: ${title}`,
 });
 
 /** Importance score — urgent push notes bubble to the top. */
 const getPriority = notifOps.match({
-  email: ({ starred }) => starred ? 2 : 1,
-  sms:   ()            => 1,
-  push:  ({ urgent })  => urgent ? 3 : 1,
+  email: ({ starred }) => (starred ? 2 : 1),
+  sms: () => 1,
+  push: ({ urgent }) => (urgent ? 3 : 1),
 });
 
 /** Is this notification unread? */
 const isUnread = notifOps.match({
   email: ({ read }) => !read,
-  sms:   ({ read }) => !read,
-  push:  ({ read }) => !read,
+  sms: ({ read }) => !read,
+  push: ({ read }) => !read,
 });
 
 /** Mark a notification as read — each variant carries `read` so we handle all. */
 const markRead = notifOps.mapAll({
   email: (n) => ({ ...n, read: true }),
-  sms:   (n) => ({ ...n, read: true }),
-  push:  (n) => ({ ...n, read: true }),
+  sms: (n) => ({ ...n, read: true }),
+  push: (n) => ({ ...n, read: true }),
 });
 
 /**
@@ -59,8 +78,8 @@ const markRead = notifOps.mapAll({
  * Only emails have a "Star" action — everything else gets "Dismiss".
  */
 const getAction = notifOps.matchWithDefault({
-  email: ({ starred }) => starred ? 'Unstar' : 'Star',
-  Default: () => 'Dismiss',
+  email: ({ starred }) => (starred ? 'Unstar' : 'Star'),
+  Default: (_value) => 'Dismiss',
 });
 
 // ── Notification store (plain array, no framework required) ───────────────────
@@ -126,8 +145,7 @@ class NotificationStore {
     return match(n)({
       email: ({ from, subject, starred, read }) =>
         `Email from ${from}\nSubject: ${subject}\nStarred: ${starred} | Read: ${read}`,
-      sms: ({ from, body, read }) =>
-        `SMS from ${from}\n${body}\nRead: ${read}`,
+      sms: ({ from, body, read }) => `SMS from ${from}\n${body}\nRead: ${read}`,
       push: ({ app, title, urgent, read }) =>
         `Push from ${app}\n${title}\nUrgent: ${urgent} | Read: ${read}`,
     });
@@ -138,13 +156,42 @@ class NotificationStore {
 
 const store = new NotificationStore();
 
-store.add({ type: 'email', from: 'boss@corp.com', subject: 'Q4 review',  read: false, starred: true });
-store.add({ type: 'sms',   from: '+1-555-0100',   body:    'Your code is ready for pickup.', read: false });
-store.add({ type: 'push',  app: 'GitHub',         title:   'PR #42 merged', read: true, urgent: false });
-store.add({ type: 'push',  app: 'PagerDuty',      title:   '🚨 Prod alert: high error rate', read: false, urgent: true });
-store.add({ type: 'email', from: 'news@digest.io', subject: 'Weekly digest', read: true, starred: false });
+store.add({
+  type: 'email',
+  from: 'boss@corp.com',
+  subject: 'Q4 review',
+  read: false,
+  starred: true,
+});
+store.add({
+  type: 'sms',
+  from: '+1-555-0100',
+  body: 'Your code is ready for pickup.',
+  read: false,
+});
+store.add({
+  type: 'push',
+  app: 'GitHub',
+  title: 'PR #42 merged',
+  read: true,
+  urgent: false,
+});
+store.add({
+  type: 'push',
+  app: 'PagerDuty',
+  title: '🚨 Prod alert: high error rate',
+  read: false,
+  urgent: true,
+});
+store.add({
+  type: 'email',
+  from: 'news@digest.io',
+  subject: 'Weekly digest',
+  read: true,
+  starred: false,
+});
 
-console.log(`Unread: ${store.unreadCount}`);  // 3
+console.log(`Unread: ${store.unreadCount}`); // 3
 console.log(`Emails: ${store.emails.length}`); // 2
 console.log(`Urgent: ${store.urgentPushes.length}`); // 1
 

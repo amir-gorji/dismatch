@@ -18,8 +18,12 @@ const expectedExports = [
   'count',
   'createPipeHandlers',
   'createUnion',
+  'every',
+  'filterMap',
+  'find',
   'fold',
   'foldWithDefault',
+  'groupBy',
   'is',
   'isUnion',
   'map',
@@ -27,6 +31,7 @@ const expectedExports = [
   'match',
   'matchWithDefault',
   'partition',
+  'some',
 ].sort();
 
 const expectedAsyncExports = [

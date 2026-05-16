@@ -65,6 +65,7 @@ export function matchAsync<
 /**
  * Async pattern matching with `Default` fallback. Like `matchWithDefault`,
  * but handlers may return `Promise<R>` or `R`. Result unified to `Promise<R>`.
+ * `Default` receives the unhandled union item, typed as the sub-union of variants with no explicit handler.
  */
 export function matchWithDefaultAsync<
   T extends SampleUnion<Discriminant>,
@@ -75,11 +76,15 @@ export function matchWithDefaultAsync<
   discriminant: Discriminant = DEFAULT_DISCRIMINANT as Discriminant,
   payload?: Payload,
 ): <U>(
-  matcher: AsyncMatcherWithDefault<T, U, Discriminant, Payload>,
+  matcher: Partial<AsyncMatcher<T, U, Discriminant, Payload>> & {
+    Default: (item: T, ...payload: [Payload] extends [never] ? [] : [payload: Payload]) => U | Promise<U>;
+  },
 ) => Promise<U> {
   ensureUnion(input, discriminant, matchWithDefaultAsync);
   return async <U>(
-    matcher: AsyncMatcherWithDefault<T, U, Discriminant, Payload>,
+    matcher: Partial<AsyncMatcher<T, U, Discriminant, Payload>> & {
+      Default: (item: T, ...payload: [Payload] extends [never] ? [] : [payload: Payload]) => U | Promise<U>;
+    },
   ) =>
     dispatch<T, U | Promise<U>, Discriminant, Payload>(
       input,
@@ -163,7 +168,7 @@ export function mapAsync<
         (input: any, payload: Payload) => T | Promise<T>
       >,
       discriminant,
-      () => input,
+      (_: T) => input,
       payload,
       mapAsync,
     );

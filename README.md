@@ -5,7 +5,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)](https://www.typescriptlang.org/)
 [![bundle size](https://img.shields.io/bundlephobia/minzip/dismatch)](https://bundlephobia.com/package/dismatch)
 
-Type-safe discriminated unions for TypeScript. Define once, get constructors, type guards, exhaustive pattern matching, async dispatch, and runtime validation — all from a single schema. Zero dependencies. ~1.1 kB gzipped.
+Type-safe discriminated unions for TypeScript. Define once, get constructors, type guards, exhaustive pattern matching, async dispatch, and runtime validation — all from a single schema. Zero dependencies. ~1.5 kB gzipped.
 
 ```ts
 import { createUnion, is, type InferUnion } from 'dismatch';
@@ -28,6 +28,8 @@ const area = Shape.match({
 
 area(Shape.circle(5)); // 78.54
 ```
+
+> **No runtime wrappers** — `createUnion` produces plain objects, so values cross network boundaries, debug cleanly, and interop with `switch` / `ts-pattern` without unwrapping. See [Removing dismatch](#removing-dismatch) for the exit path.
 
 > **`switch` gives you exhaustiveness. `dismatch` gives you exhaustiveness plus reusable typed matchers, `map`, `fold`, `partition`, `count`, `is`, runtime validation, and async — all from a single schema.**
 
@@ -137,6 +139,7 @@ npm install dismatch
 - [Type Helpers](#type-helpers)
 - [Custom Discriminant](#custom-discriminant)
 - [Patterns](#patterns)
+- [Removing dismatch](#removing-dismatch)
 - [RemoteData](#remotedata)
 - [Runtime Errors & Clean Stack Traces](#runtime-errors--clean-stack-traces)
 - [Contributing](#contributing)
@@ -148,40 +151,47 @@ npm install dismatch
 
 > **`ts-pattern` matches any pattern. `dismatch` manages discriminated unions — and is the only one with first-class async.**
 
-| Capability                                          |          dismatch          |      ts-pattern       | unionize  |    @effect/match     |
-| --------------------------------------------------- | :------------------------: | :-------------------: | :-------: | :------------------: |
-| **Footprint**                                       |                            |                       |           |                      |
-| Size, minified (full main entry, not gzipped)       |        **~2.4 kB**         |        ~7.7 kB        | unclear   |    ecosystem-tied    |
-| Zero dependencies                                   |             ✓              |           ✓           |     ✓     |          ✗           |
-| Per-function tree-shaking                           |             ✓              |        partial        |     —     |       partial        |
-| Active maintenance                                  |             ✓              |           ✓           | ✗ (2018)  |          ✓           |
-| **Compile-time correctness**                        |                            |                       |           |                      |
-| Exhaustive matching for DUs                         |             ✓              | ✓ via `.exhaustive()` |     ✓     |          ✓           |
-| No `{ type: '…' }` / `.with()` ceremony per branch  |             ✓              |           ✗           |     ✓     |          ✗           |
-| Reusable, curried handlers (define once, reuse)     |             ✓              |     ✗ (one-shot)      |     ✓     |       partial        |
-| Sub-union narrowing on `.filter()` / `.find()`      |             ✓              |           ✗           |     ✗     |          ✗           |
-| Payload threaded through every handler              |             ✓              |           ✗           |     ✗     |          ✗           |
-| **Async — unique to dismatch**                      |                            |                       |           |                      |
-| `matchAsync` — single value, unified `Promise<R>`   |           **✓**            |           ✗           |     ✗     |          ✗           |
-| `matchWithDefaultAsync` — partial async             |           **✓**            |           ✗           |     ✗     |          ✗           |
-| `matchAllAsync` — parallel, order-preserved         |           **✓**            |           ✗           |     ✗     |          ✗           |
-| `foldAsync` — sequential aggregation                |           **✓**            |           ✗           |     ✗     |          ✗           |
-| `foldWithDefaultAsync`                              |           **✓**            |           ✗           |     ✗     |          ✗           |
-| `mapAsync` — async partial transform                |           **✓**            |           ✗           |     ✗     |          ✗           |
-| Mixed sync + async handlers still unify             |           **✓**            |           ✗           |     ✗     |          ✗           |
-| **Variant-aware collections**                       |                            |                       |           |                      |
-| `fold` — exhaustive single-pass aggregation         |             ✓              |           ✗           |     ✗     |          ✗           |
-| `foldWithDefault` — partial aggregation             |             ✓              |           ✗           |     ✗     |          ✗           |
-| `count` by variant(s)                               |             ✓              |           ✗           |     ✗     |          ✗           |
-| `partition` (both sides narrowed)                   |             ✓              |           ✗           |     ✗     |          ✗           |
-| `map` partial transform (discriminant kept)         |             ✓              |           ✗           |     ✗     |          ✗           |
-| `mapAll` exhaustive transform                       |             ✓              |           ✗           |     ✗     |          ✗           |
-| **Runtime & schema**                                |                            |                       |           |                      |
-| `createUnion` — one schema, full toolkit            |             ✓              |           ✗           | ✓ (stale) |          ✗           |
-| `isKnown` — schema-membership check                 |             ✓              |           ✗           |     ✗     | via `@effect/schema` |
-| Named `UnknownVariantError` (`.variant`, `.known`)  |             ✓              |           ✗           |     ✗     |          ✗           |
-| Clean stack traces (point at your call site)        |             ✓              |           ✗           |     ✗     |          ✗           |
-| Companion async-state union (`dismatch/remote-data`)|             ✓              |           ✗           |     ✗     |          ✗           |
+| Capability                                           |     dismatch     |      ts-pattern       | unionize  |    @effect/match     |
+| ---------------------------------------------------- | :--------------: | :-------------------: | :-------: | :------------------: |
+| **Footprint**                                        |                  |                       |           |                      |
+| Size, minified (full main entry, not gzipped)        |   **~3.2 kB**    |        ~7.7 kB        |  unclear  |    ecosystem-tied    |
+| Zero dependencies                                    |        ✓         |           ✓           |     ✓     |          ✗           |
+| Per-function tree-shaking                            |        ✓         |        partial        |     —     |       partial        |
+| Active maintenance                                   |        ✓         |           ✓           | ✗ (2018)  |          ✓           |
+| **Adoption & interop**                               |                  |                       |           |                      |
+| Plain-object output (wire-serializable, no wrappers) |        ✓         |          N/A          |     ✓     |          ✗           |
+| Source-level exit cost                               | low (mechanical) |          N/A          |    low    |         high         |
+| **Compile-time correctness**                         |                  |                       |           |                      |
+| Exhaustive matching for DUs                          |        ✓         | ✓ via `.exhaustive()` |     ✓     |          ✓           |
+| No `{ type: '…' }` / `.with()` ceremony per branch   |        ✓         |           ✗           |     ✓     |          ✗           |
+| Reusable, curried handlers (define once, reuse)      |        ✓         |     ✗ (one-shot)      |     ✓     |       partial        |
+| Sub-union narrowing on `.filter()` / `.find()`       |        ✓         |           ✗           |     ✗     |          ✗           |
+| Payload threaded through every handler               |        ✓         |           ✗           |     ✗     |          ✗           |
+| **Async — unique to dismatch**                       |                  |                       |           |                      |
+| `matchAsync` — single value, unified `Promise<R>`    |      **✓**       |           ✗           |     ✗     |          ✗           |
+| `matchWithDefaultAsync` — partial async              |      **✓**       |           ✗           |     ✗     |          ✗           |
+| `matchAllAsync` — parallel, order-preserved          |      **✓**       |           ✗           |     ✗     |          ✗           |
+| `foldAsync` — sequential aggregation                 |      **✓**       |           ✗           |     ✗     |          ✗           |
+| `foldWithDefaultAsync`                               |      **✓**       |           ✗           |     ✗     |          ✗           |
+| `mapAsync` — async partial transform                 |      **✓**       |           ✗           |     ✗     |          ✗           |
+| Mixed sync + async handlers still unify              |      **✓**       |           ✗           |     ✗     |          ✗           |
+| **Variant-aware collections**                        |                  |                       |           |                      |
+| `fold` — exhaustive single-pass aggregation          |        ✓         |           ✗           |     ✗     |          ✗           |
+| `foldWithDefault` — partial aggregation              |        ✓         |           ✗           |     ✗     |          ✗           |
+| `count` by variant(s)                                |        ✓         |           ✗           |     ✗     |          ✗           |
+| `partition` (both sides narrowed)                    |        ✓         |           ✗           |     ✗     |          ✗           |
+| `find` — first match, narrowed                       |        ✓         |           ✗           |     ✗     |          ✗           |
+| `some` / `every` — boolean predicates                |        ✓         |           ✗           |     ✗     |          ✗           |
+| `groupBy` — all groups, narrowed types               |        ✓         |           ✗           |     ✗     |          ✗           |
+| `filterMap` — filter + transform in one pass         |        ✓         |           ✗           |     ✗     |          ✗           |
+| `map` partial transform (discriminant kept)          |        ✓         |           ✗           |     ✗     |          ✗           |
+| `mapAll` exhaustive transform                        |        ✓         |           ✗           |     ✗     |          ✗           |
+| **Runtime & schema**                                 |                  |                       |           |                      |
+| `createUnion` — one schema, full toolkit             |        ✓         |           ✗           | ✓ (stale) |          ✗           |
+| `isKnown` — schema-membership check                  |        ✓         |           ✗           |     ✗     | via `@effect/schema` |
+| Named `UnknownVariantError` (`.variant`, `.known`)   |        ✓         |           ✗           |     ✗     |          ✗           |
+| Clean stack traces (point at your call site)         |        ✓         |           ✗           |     ✗     |          ✗           |
+| Companion async-state union (`dismatch/remote-data`) |        ✓         |           ✗           |     ✗     |          ✗           |
 
 > **Need regex, wildcards, nested object patterns, or class-instance matching?** Use `ts-pattern` — those aren't DU problems. For the 90% of TypeScript code where unions look like `{ type: 'x' } | { type: 'y' }`, `dismatch` is the scalpel.
 
@@ -224,6 +234,46 @@ const Event = createUnion('kind', {
 type Event = InferUnion<typeof Event>;
 // { kind: 'click'; x: number } | { kind: 'key'; code: string }
 ```
+
+#### Re-exporting constructors
+
+`createUnion` returns a plain object holding constructors, matchers, and metadata, so you can destructure and re-export anything you want. Two idioms cover the common cases.
+
+**Namespace style** — keep the factory public, destructure for ergonomics:
+
+```ts
+// shape.ts
+export const Shape = createUnion({
+  circle: (radius: number) => ({ radius }),
+  rectangle: (width: number, height: number) => ({ width, height }),
+});
+export type Shape = InferUnion<typeof Shape>;
+export const { circle, rectangle } = Shape;
+
+// consumer.ts
+import { Shape, circle } from './shape';
+const c = circle(5);
+const area = Shape.match({
+  /* ... */
+});
+```
+
+**Exit-friendly style** — keep the factory file-private; only constructors and the type leave the module. Type alias derives from `ReturnType` of the constructors, so it has no dependency on the factory:
+
+```ts
+// shape.ts
+const _Shape = createUnion({
+  circle: (radius: number) => ({ radius }),
+  rectangle: (width: number, height: number) => ({ width, height }),
+});
+export const { circle, rectangle, match, matchWithDefault, is } = _Shape;
+export type Shape = ReturnType<typeof circle> | ReturnType<typeof rectangle>;
+
+// consumer.ts
+import { circle, match, type Shape } from './shape';
+```
+
+The exit-friendly style is what makes [Removing dismatch](#removing-dismatch) mechanical: the type alias survives even after the factory is gone, because it's a TS-native discriminated union.
 
 ### 2. Construct values
 
@@ -561,6 +611,86 @@ const [actionable, rest] = partition(notifications, ['NEW', 'ACTION_NEEDED']);
 const [clicks, others] = partition(events, 'click', 'kind');
 ```
 
+### `find`
+
+Returns the first item in a collection matching the given variant(s), narrowed to that type, or `undefined`. Non-union items are silently skipped.
+
+```ts
+import { find } from 'dismatch';
+
+find(shapes, 'circle');                    // Circle | undefined
+find(shapes, ['circle', 'rectangle']);     // Circle | Rectangle | undefined
+
+// Custom discriminant
+find(events, 'click', 'kind');
+```
+
+### `some`
+
+Returns `true` if any item in the collection matches the given variant(s). Non-union items are silently skipped.
+
+```ts
+import { some } from 'dismatch';
+
+some(shapes, 'circle');                    // boolean
+some(shapes, ['circle', 'rectangle']);     // boolean
+
+// Custom discriminant
+some(events, 'click', 'kind');
+```
+
+### `every`
+
+Returns `true` if every item in the collection matches the given variant(s). Non-union items are silently skipped. Returns `true` for an empty collection (vacuous truth, consistent with `Array.prototype.every`).
+
+```ts
+import { every } from 'dismatch';
+
+every(shapes, 'circle');                   // true only if all shapes are circles
+every(shapes, ['circle', 'rectangle']);    // true if no triangles
+
+// Custom discriminant
+every(events, 'click', 'kind');
+```
+
+### `groupBy`
+
+Groups a collection by variant in one pass. Each group is narrowed to the specific variant type. Keys for variants absent from the input are not present in the result.
+
+```ts
+import { groupBy } from 'dismatch';
+
+const groups = groupBy(shapes);
+groups.circle;     // Circle[] | undefined
+groups.rectangle;  // Rectangle[] | undefined
+
+// Custom discriminant
+groupBy(events, 'kind');
+```
+
+### `filterMap`
+
+Filters and transforms a collection in one pass. Each handler returns a transformed value to keep, or `undefined` to skip. Variants with no handler are silently skipped. `null` is a valid kept value.
+
+```ts
+import { filterMap } from 'dismatch';
+
+const areas = filterMap(shapes, {
+  circle: ({ radius }) => Math.PI * radius ** 2,
+  // rectangle and triangle omitted — silently skipped
+});
+// areas: number[]
+
+// Return undefined to conditionally skip within a handler
+const largeAreas = filterMap(shapes, {
+  circle: ({ radius }) => radius > 10 ? Math.PI * radius ** 2 : undefined,
+  rectangle: ({ width, height }) => width * height > 50 ? width * height : undefined,
+});
+
+// Custom discriminant
+filterMap(events, { click: ({ x, y }) => `${x},${y}` }, 'kind');
+```
+
 ### `isUnion`
 
 Runtime check that a value is a valid discriminated union.
@@ -680,7 +810,10 @@ Partial async fold with an async-or-sync `Default` fallback. Sequential — accu
 ```ts
 import { foldWithDefaultAsync } from 'dismatch/async';
 
-const summary = await foldWithDefaultAsync(events, '')({
+const summary = await foldWithDefaultAsync(
+  events,
+  '',
+)({
   click: async (acc, { x }) => `${acc} click@${await label(x)}`,
   Default: (acc) => acc,
 });
@@ -690,7 +823,7 @@ const summary = await foldWithDefaultAsync(events, '')({
 
 ## Pipe Composition
 
-`createPipeHandlers` returns the same set of sync operations in **handlers-first** curried order — you define handlers once, get back a reusable function bound to the union type and discriminant. No generics needed at call sites. Exposes `match`, `matchWithDefault`, `map`, `mapAll`, `fold`, `foldWithDefault`, `count`, `partition`, and `is`. (Async helpers are standalone-only — see [Async Functions](#async-functions).)
+`createPipeHandlers` returns the same set of sync operations in **handlers-first** curried order — you define handlers once, get back a reusable function bound to the union type and discriminant. No generics needed at call sites. Exposes `match`, `matchWithDefault`, `map`, `mapAll`, `fold`, `foldWithDefault`, `count`, `partition`, `find`, `some`, `every`, `groupBy`, `filterMap`, and `is`. (Async helpers are standalone-only — see [Async Functions](#async-functions).)
 
 ```ts
 import { createPipeHandlers } from 'dismatch';
@@ -860,6 +993,92 @@ const reduce = (state: number, action: Action): number =>
     reset: () => 0,
   });
 ```
+
+---
+
+## Removing dismatch
+
+Lock-in is a fair concern when a library shows up at hundreds of call sites. `dismatch` is designed so removal is mechanical, not redesign:
+
+- **Values are plain objects** — `circle(5)` returns `{ type: 'circle', radius: 5 }`. Nothing to unwrap.
+- **Types are TS-native discriminated unions** — if you used the [exit-friendly style](#re-exporting-constructors), the type alias has no dependency on `dismatch` at all.
+- **Matchers are exhaustive `switch` in disguise** — TypeScript already enforces exhaustiveness on `switch` over discriminated unions.
+
+### Mechanical rewrite
+
+Starting from this `dismatch` code:
+
+```ts
+import { createUnion, type InferUnion } from 'dismatch';
+
+const _Result = createUnion({
+  ok: (data: string) => ({ data }),
+  err: (message: string) => ({ message }),
+});
+export const { ok, err, match, is } = _Result;
+export type Result = ReturnType<typeof ok> | ReturnType<typeof err>;
+
+// call sites
+const r = ok('hi');
+const banner = match({
+  ok: ({ data }) => `Loaded: ${data}`,
+  err: ({ message }) => `Error: ${message}`,
+});
+if (is('ok')(r)) r.data;
+```
+
+Replace constructors with object literals, matchers with `switch`, and `is(...)` with `===`. The `Result` type alias does not change:
+
+```ts
+export const ok = (data: string) => ({ type: 'ok' as const, data });
+export const err = (message: string) => ({ type: 'err' as const, message });
+export type Result = ReturnType<typeof ok> | ReturnType<typeof err>;
+
+const banner = (r: Result) => {
+  switch (r.type) {
+    case 'ok':
+      return `Loaded: ${r.data}`;
+    case 'err':
+      return `Error: ${r.message}`;
+  }
+};
+const r = ok('hi');
+if (r.type === 'ok') r.data;
+```
+
+The constructor-call shape (`ok('hi')`) is unchanged at every call site — only the constructor _definition_ file is touched. Matcher rewrites are local to wherever you called `match(...)`.
+
+### Incremental adoption — you don't have to leave to mix tools
+
+Because output is plain `{ type, ... }`, dismatch values feed any other matcher unchanged. Use whichever tool fits the call site:
+
+```ts
+import { match as tsPatternMatch } from 'ts-pattern';
+
+const r = ok('hi'); // dismatch constructor
+
+// Plain switch — zero dependencies
+switch (r.type) {
+  case 'ok':
+    /* ... */ break;
+  case 'err':
+    /* ... */ break;
+}
+
+// ts-pattern — for nested patterns, regex, wildcards
+const label = tsPatternMatch(r)
+  .with({ type: 'ok' }, ({ data }) => data)
+  .with({ type: 'err' }, ({ message }) => message)
+  .exhaustive();
+
+// dismatch — for reusable typed matchers
+const banner = match({
+  ok: ({ data }) => `Loaded: ${data}`,
+  err: ({ message }) => `Error: ${message}`,
+});
+```
+
+You can adopt `createUnion` for value generation today and reach for `ts-pattern` (or a plain `switch`) wherever its strengths matter — no conversion layer, no wrapping, no factory dependency at the matcher.
 
 ---
 

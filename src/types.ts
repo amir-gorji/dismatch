@@ -76,13 +76,10 @@ export type Matcher<
 /**
  * Partial handler map with a required `Default` fallback for unmatched variants.
  * Unlike {@link Matcher}, individual variant handlers are optional. When a variant
- * has no handler, the `Default` function is called instead.
+ * has no handler, `Default` is called with the full union item.
  *
- * **Design limitation:** `Default` does not receive the triggering variant as an argument.
- * When `Payload = never` (the default), `Default` receives no arguments at all — there
- * is no way to inspect which variant fell through inside `Default`. If you need to
- * branch on the unmatched variant, use exhaustive {@link Matcher} instead, or pass the
- * original value via the `Payload` type parameter.
+ * `Default` receives the item as its first argument, typed as `T`. Narrow the variant
+ * inside `Default` using the discriminant property (e.g. `item.type`).
  *
  * @typeParam T - The discriminated union type
  * @typeParam Result - The return type of all handler functions (including Default)
@@ -93,7 +90,7 @@ export type Matcher<
  *
  * const describe: MatcherWithDefault<Shape, string> = {
  *   circle: ({ radius }) => `Circle with radius ${radius}`,
- *   Default: () => 'Unknown shape', // ← cannot inspect which variant fell through
+ *   Default: (item) => `Other: ${item.type}`,
  * };
  * ```
  */
@@ -103,9 +100,7 @@ export type MatcherWithDefault<
   Discriminant extends PropertyKey,
   Payload extends any = never,
 > = Partial<Matcher<T, Result, Discriminant, Payload>> & {
-  Default: (
-    ...args: [Payload] extends [never] ? [] : [payload: Payload]
-  ) => Result;
+  Default: (item: T, ...payload: [Payload] extends [never] ? [] : [payload: Payload]) => Result;
 };
 
 /**
@@ -246,6 +241,7 @@ export type AsyncMatcher<
 /**
  * Async partial handler map with a required `Default` fallback.
  * Each handler (including `Default`) may return `Result` or `Promise<Result>`.
+ * `Default` receives the full union item as its first argument.
  */
 export type AsyncMatcherWithDefault<
   T extends SampleUnion<Discriminant>,
@@ -253,9 +249,7 @@ export type AsyncMatcherWithDefault<
   Discriminant extends PropertyKey,
   Payload extends any = never,
 > = Partial<AsyncMatcher<T, Result, Discriminant, Payload>> & {
-  Default: (
-    ...args: [Payload] extends [never] ? [] : [payload: Payload]
-  ) => Result | Promise<Result>;
+  Default: (item: T, ...payload: [Payload] extends [never] ? [] : [payload: Payload]) => Result | Promise<Result>;
 };
 
 /**
@@ -315,6 +309,32 @@ export type TakeDiscriminant<T, K extends keyof T = keyof T> = K extends keyof T
     : never
   : never;
 
+/**
+ * Partial handler map for `filterMap`. Each handler receives the variant's data
+ * and returns a transformed value to keep, or `undefined` to skip.
+ * Variants with no handler are silently skipped.
+ */
+export type FilterMapHandlers<
+  T extends SampleUnion<Discriminant>,
+  Result,
+  Discriminant extends PropertyKey,
+> = {
+  [K in T[Discriminant]]?: T extends Model<K, infer Data, Discriminant>
+    ? (input: Data) => Result | undefined
+    : never;
+};
+
+/**
+ * Return type of `groupBy`. Each variant key maps to a narrowed array of that variant.
+ * Keys for variants absent from the input may be missing at runtime.
+ */
+export type GroupByResult<
+  T extends SampleUnion<Discriminant>,
+  Discriminant extends PropertyKey,
+> = {
+  [K in T[Discriminant]]?: Extract<T, { [D in Discriminant]: K }>[];
+};
+
 type SchemaData<D extends string> = object & { [Disc in D]?: never };
 
 export type ReservedUnionKeys =
@@ -328,6 +348,11 @@ export type ReservedUnionKeys =
   | 'foldWithDefault'
   | 'count'
   | 'partition'
+  | 'find'
+  | 'some'
+  | 'every'
+  | 'groupBy'
+  | 'filterMap'
   | 'variants'
   | 'discriminant'
   | '_union';
@@ -451,6 +476,23 @@ export type UnionFactory<D extends string, Schema extends UnionSchema<D>> = {
     Extract<InferUnionFromSchema<D, Schema>, { [Disc in D]: U }>[],
     Exclude<InferUnionFromSchema<D, Schema>, { [Disc in D]: U }>[],
   ];
+  readonly find: <U extends keyof Schema & string>(
+    variants: U | readonly U[],
+  ) => (
+    items: ReadonlyArray<InferUnionFromSchema<D, Schema>>,
+  ) => Extract<InferUnionFromSchema<D, Schema>, { [Disc in D]: U }> | undefined;
+  readonly some: (
+    variants: (keyof Schema & string) | ReadonlyArray<keyof Schema & string>,
+  ) => (items: ReadonlyArray<InferUnionFromSchema<D, Schema>>) => boolean;
+  readonly every: (
+    variants: (keyof Schema & string) | ReadonlyArray<keyof Schema & string>,
+  ) => (items: ReadonlyArray<InferUnionFromSchema<D, Schema>>) => boolean;
+  readonly groupBy: (
+    items: ReadonlyArray<InferUnionFromSchema<D, Schema>>,
+  ) => GroupByResult<InferUnionFromSchema<D, Schema>, D>;
+  readonly filterMap: <Result>(
+    handlers: FilterMapHandlers<InferUnionFromSchema<D, Schema>, Result, D>,
+  ) => (items: ReadonlyArray<InferUnionFromSchema<D, Schema>>) => Result[];
   readonly variants: ReadonlyArray<keyof Schema & string>;
   readonly discriminant: D;
   /**
